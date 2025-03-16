@@ -6,31 +6,92 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R
 import torch
 import copy
-from pytorch3d.transforms import euler_angles_to_matrix, matrix_to_euler_angles
-def get_rotation_from_orientations(orientations,joint_parent):
+
+#计算path上joint(不包括end)的相对旋转 一律用欧拉角表示 输入的orientations是所有joint的
+def get_rotation_from_orientations(orientations,joint_parent,path):
     rotation = []
-    rotation.append(R.from_quat(orientations[0]).as_matrix())
-    for i in range(1, len(orientations)):
-        matrix1 = R.from_quat(orientations[joint_parent[i]]).as_matrix()
-        matrix2 = R.from_quat(orientations[i]).as_matrix()
+    #path的根节点的相对旋转R=Q
+    rotation.append(R.from_quat(orientations[path[0]]).as_euler('XYZ',degrees=True))
+    for i in range(1, len(path)-1):
+        matrix1 = R.from_quat(orientations[joint_parent[path[i]]]).as_matrix() #事实上 path[i]关节的parent就是path[i-1]
+        matrix2 = R.from_quat(orientations[path[i]]).as_matrix()
         local_rotation = np.linalg.inv(matrix1) @ matrix2
-        rotation.append(local_rotation)
+        rotation.append(R.from_matrix(local_rotation).as_euler('XYZ',degrees=True))
     return np.array(rotation)
 
-
-def get_offset_from_position(positions,joint_parent):
+#计算每个joint的offset
+def get_offset_from_position(joint_name,positions,joint_parent):
     offset=[]
-    offset.append(np.array([0.,0.,0.]))
-    for i in range(1,len(positions)):
+    offset.append(positions[0])
+    for i in range(1,len(joint_name)):
         offset.append(positions[i]-positions[joint_parent[i]])
     return np.array(offset)
 
-def matrix_to_quat(rotations):
-    res=[]
-    for i in range(len(rotations)):
-        res.append( R.from_matrix(rotations[i]).as_quat())
-    return np.array(res)
+#计算雅可比矩阵 不包括end Geometric Approach
+def getJacobian(path,target_pose,joint_positions,joint_orientations,joint_angles):
+    Jacobian = []
+    for i in range(len(path) - 1):#不包括end joint
+        r = target_pose - joint_positions[path[i]]
+        if i == 0:
+            last_joint_orientation = R.from_quat([0.,0.,0.,1.0])
+        else:
+            last_joint_orientation = R.from_quat(joint_orientations[path[i-1]])
+        curr_joint_orientation = joint_angles[i]
+        rotation_x = R.from_euler('XYZ',[curr_joint_orientation[0], 0., 0.], degrees=True)
+        rotation_xy = R.from_euler('XYZ',[curr_joint_orientation[0], curr_joint_orientation[1], 0.], degrees=True)
+        
+        x = [1.,0.,0.]
+        y = [0.,1.,0.]
+        z = [0.,0.,1.]
 
+        axis_x = last_joint_orientation.apply(x)
+        axis_y = last_joint_orientation.apply(rotation_x.apply(y))
+        axis_z = last_joint_orientation.apply(rotation_xy.apply(z))
+
+        Jacobian.append((np.cross(axis_x, r),np.cross(axis_y, r),np.cross(axis_z, r)))
+
+    Jacobian = np.array(Jacobian)
+    return Jacobian
+
+#每次梯度下降之后要更新chain上的joint的position和orientation
+#这里容易错的是 需要先还原上一次朝向 因为我们梯度下降得到的永远是针对于最初的T-pose而言的旋转
+def update(path,rotation_angle,joint_parent,last_orientations,last_positions,offsets):
+    orientations=copy.deepcopy(last_orientations)
+    positions=copy.deepcopy(last_positions)
+    orientations[path[0]]=(R.from_euler('XYZ',rotation_angle[0]).as_quat())
+    #更新朝向 这里也不需要还原
+    for i in range(1,len(path)-1):
+        orientation_parent=orientations[path[i-1]]
+        cur_orientation=R.from_quat(orientation_parent).as_matrix()@R.from_euler('XYZ',rotation_angle[i]).as_matrix()
+        orientations[path[i]]=(R.from_matrix(cur_orientation).as_quat())
+    orientations[path[-1]]=orientations[path[len(path)-2]]
+    #更新位置 不需要还原position 还原朝向即可 我们知道path的root不动 所以每次都可以重新开始计算
+    positions[path[0]]=(last_positions[path[0]])
+    for i in range(1,len(path)):
+        orientation=R.from_quat(orientations[path[i-1]])*R.inv(R.from_quat(last_orientations[path[i-1]]))
+        positions[path[i]]=(positions[path[i-1]]+orientation.apply(offsets[path[i]]))
+    return orientations,positions
+#梯度下降
+def iterations(joint_positions,path,target_pose,joint_orientations,joint_parent,offsets,max_iterations=20,lr=0.5):
+    end_index=path[-1]
+    positions=joint_positions
+    orientations=joint_orientations
+    while max_iterations>0:
+        max_iterations-=1
+        distance=positions[end_index]-target_pose
+        print(distance)
+        if np.linalg.norm(distance)<0.01:
+            break
+        rotation_angle=get_rotation_from_orientations(orientations,joint_parent,path)
+        #rotation_angle 是不包括end的欧拉角形式的局部旋转np
+        jacobian=getJacobian(path,target_pose,positions,orientations,rotation_angle)
+        #雅可比矩阵同样不包括end
+        rotation_angle=rotation_angle-lr*jacobian@distance
+        #进行一次梯度下降
+        orientations,positions=update(path,rotation_angle,joint_parent,orientations,positions,offsets)
+    return positions,orientations
+
+'''
 class IKmodel():
     def __init__(self,rotations,offsets,target_pose,path,root_index,lr=0.1,threshold=0.01):
         self.rotation_tensor=torch.tensor(rotations, requires_grad=True, dtype=torch.float32)
@@ -40,7 +101,7 @@ class IKmodel():
         self.threshold=threshold
         self.lr=lr
         self.root_index=root_index
-        self.joint_rotation=matrix_to_quat(rotations)
+        #self.joint_rotation=matrix_to_quat(rotations)
         self.optimizer = torch.optim.Adam([self.rotation_tensor], lr=self.lr)
 
     def forward(self):
@@ -70,39 +131,8 @@ class IKmodel():
             self.joint_rotation[index] = R.from_matrix(self.rotation_tensor[self.path[i]].detach().cpu().numpy()).as_quat()
             
         return self.joint_rotation
-def rotation_matrix(a, b):
-    a=a/np.linalg.norm(a)
-    b=b/np.linalg.norm(b)
-    n = np.cross(a, b)
-    # 旋转矩阵是正交矩阵，矩阵的每一行每一列的模，都为1；并且任意两个列向量或者任意两个行向量都是正交的。
-    # n=n/np.linalg.norm(n)
-    # 计算夹角
-    cos_theta = np.dot(a, b)
-    sin_theta = np.linalg.norm(n)
-    theta = np.arctan2(sin_theta, cos_theta)
-    # 构造旋转矩阵
-    c = np.cos(theta)
-    s = np.sin(theta)
-    v = 1 - c
-    rotation_matrix = np.array([[n[0]*n[0]*v+c, n[0]*n[1]*v-n[2]*s, n[0]*n[2]*v+n[1]*s],
-                                 [n[0]*n[1]*v+n[2]*s, n[1]*n[1]*v+c, n[1]*n[2]*v-n[0]*s],
-                                 [n[0]*n[2]*v-n[1]*s, n[1]*n[2]*v+n[0]*s, n[2]*n[2]*v+c]])
-    return rotation_matrix
 
-def inv_safe(data):
-    # return R.from_quat(data).inv()
-    if np.allclose(data, [0, 0, 0, 0]):
-        return np.eye(3)
-    else:
-        return np.linalg.inv(R.from_quat(data).as_matrix())
-    
-def from_quat_safe(data):
-    # return R.from_quat(data)
-    if np.allclose(data, [0, 0, 0, 0]):
-        return np.eye(3)
-    else:
-        return R.from_quat(data).as_matrix()
-
+'''
 def part1_inverse_kinematics(meta_data, joint_positions, joint_orientations, target_pose):
     """
     完成函数，计算逆运动学
@@ -116,125 +146,13 @@ def part1_inverse_kinematics(meta_data, joint_positions, joint_orientations, tar
         joint_positions: 计算得到的关节位置，是一个numpy数组，shape为(M, 3)，M为关节数
         joint_orientations: 计算得到的关节朝向，是一个numpy数组，shape为(M, 4)，M为关节数
     """
-    def get_joint_rotations():
-        joint_rotations = np.empty(joint_orientations.shape)
-        for i in range(len(joint_name)):
-            if joint_parent[i] == -1:
-                joint_rotations[i] = R.from_euler('XYZ', [0.,0.,0.]).as_quat()
-            else:
-                joint_rotations[i] = (R.from_quat(joint_orientations[joint_parent[i]]).inv() * R.from_quat(joint_orientations[i])).as_quat()
-        return joint_rotations
-
-    def get_joint_offsets():
-        joint_offsets = np.empty(joint_positions.shape)
-        for i in range(len(joint_name)):
-            if joint_parent[i] == -1:
-                joint_offsets[i] = np.array([0.,0.,0.])
-            else:
-                joint_offsets[i] = joint_initial_position[i] - joint_initial_position[joint_parent[i]]
-        return joint_offsets
-
-    joint_name = meta_data.joint_name
-    joint_parent = meta_data.joint_parent
-    joint_initial_position = meta_data.joint_initial_position
-    root_joint = meta_data.root_joint
-    end_joint = meta_data.end_joint
-
-    path, path_name, path1, path2 = meta_data.get_path_from_root_to_end()
-    #
-    if len(path2) == 1:
-        path2 = []
-
-    # 每个joint的local rotation，用四元数表示
-    joint_rotations = get_joint_rotations()
-    joint_offsets = get_joint_offsets()
-
-
-    # chain和path中的joint相对应，chain[0]代表不动点，chain[-1]代表end节点
-    rotation_chain = np.empty((len(path), 3), dtype=float)
-    offset_chain = np.empty((len(path), 3), dtype=float)
-
-    # 对chain进行初始化
-    if len(path2) > 1:
-        rotation_chain[0] = R.from_quat(joint_orientations[path2[1]]).inv().as_euler('XYZ')
-    else:
-        rotation_chain[0] = R.from_quat(joint_orientations[path[0]]).as_euler('XYZ')
-
-    # position_chain[0] = joint_positions[path[0]]
-    start_position = torch.tensor(joint_positions[path[0]], requires_grad=False)
-    offset_chain[0] = np.array([0.,0.,0.])
-
-    for i in range(1, len(path)):
-        index = path[i]
-        if index in path2:
-            # essential
-            rotation_chain[i] = R.from_quat(joint_rotations[path[i]]).inv().as_euler('XYZ')
-            offset_chain[i] = -joint_offsets[path[i - 1]]
-            # essential
-        else:
-            rotation_chain[i] = R.from_quat(joint_rotations[index]).as_euler('XYZ')
-            offset_chain[i] = joint_offsets[index]
-
-    # pytorch autograde
-    rotation_chain_tensor = torch.tensor(rotation_chain, requires_grad=True, dtype=torch.float32)
-    offset_chain_tensor = torch.tensor(offset_chain, requires_grad=False, dtype=torch.float32)
-    target_position = torch.tensor(target_pose, requires_grad=False, dtype=torch.float32)
-    rootjoint_index_in_path = path.index(0)
-    max_times = 50
-    lr = 0.1
-    while max_times > 0:
-        # 向前计算end position
-        max_times -= 1
-        cur_position = start_position
-        cur_orientation = rotation_chain_tensor[0]
-        for i in range(1, len(path)):
-            cur_position = euler_angles_to_matrix(cur_orientation, 'XYZ') @ offset_chain_tensor[i] + cur_position
-            orientation_matrix = euler_angles_to_matrix(cur_orientation, 'XYZ') @ euler_angles_to_matrix(rotation_chain_tensor[i], 'XYZ')
-            cur_orientation = matrix_to_euler_angles(orientation_matrix, 'XYZ')
-            # joint_positions[path[i]] = cur_position.detach().numpy()
-            # joint_orientations[path[i]] = R.from_euler('XYZ', cur_orientation.detach().numpy()).as_quat()
-        dist = torch.norm(cur_position - target_position)
-        if dist < 0.01 or max_times == 0:
-            break
-
-        # 反向传播
-        dist.backward()
-        rotation_chain_tensor.grad[rootjoint_index_in_path].zero_()
-        rotation_chain_tensor.data.sub_(rotation_chain_tensor.grad * lr)
-        rotation_chain_tensor.grad.zero_()
-
-    # return joint_positions, joint_orientations
-
-    # 把计算之后的IK写回joint_rotation
-    for i in range(len(path)):
-        index = path[i]
-        if index in path2:
-            joint_rotations[index] = R.from_euler('XYZ', rotation_chain_tensor[i].detach().numpy()).inv().as_quat()
-        else:
-            joint_rotations[index] = R.from_euler('XYZ', rotation_chain_tensor[i].detach().numpy()).as_quat()
-
-
-    # 当IK链不过rootjoint时，IK起点的rotation需要特殊处理
-    if path2 == [] and path[0] != 0:
-        joint_rotations[path[0]] = (R.from_quat(joint_orientations[joint_parent[path[0]]]).inv() 
-                                    * R.from_euler('XYZ', rotation_chain_tensor[0].detach().numpy())).as_quat()
-
-    # 如果rootjoint在IK链之中，那么需要更新rootjoint的信息
-    if 0 in path and rootjoint_index_in_path != 0:
-        rootjoint_pos = start_position
-        rootjoint_ori = rotation_chain_tensor[0]
-        for i in range(1, rootjoint_index_in_path + 1):
-            rootjoint_pos = euler_angles_to_matrix(rootjoint_ori, 'XYZ') @ offset_chain_tensor[i] + rootjoint_pos
-            rootjoint_ori = matrix_to_euler_angles(euler_angles_to_matrix(rootjoint_ori, 'XYZ') @ euler_angles_to_matrix(rotation_chain_tensor[i], 'XYZ'), 'XYZ')
-        joint_orientations[0] = R.from_euler('XYZ', rootjoint_ori.detach().numpy()).as_quat()
-        joint_positions[0] = rootjoint_pos.detach().numpy()
-
-    
-    # 最后计算一遍FK，得到更新后的position和orientation
-    for i in range(1, len(joint_positions)):
-        p = joint_parent[i]
-        joint_orientations[i] = (R.from_quat(joint_orientations[p]) * R.from_quat(joint_rotations[i])).as_quat()
-        joint_positions[i] = joint_positions[p] + np.dot(R.from_quat(joint_orientations[p]).as_matrix(), joint_offsets[i])
+    joint_name=meta_data.joint_name
+    joint_parent=meta_data.joint_parent
+    root_joint=meta_data.root_joint
+    end_joint=meta_data.end_joint 
+    path,path_name,path1,path2=meta_data.get_path_from_root_to_end()
+    offsets=get_offset_from_position(joint_name,joint_positions,joint_parent)
+    joint_positions,joint_orientations=iterations(joint_positions,path,target_pose,joint_orientations,joint_parent,offsets)
 
     return joint_positions, joint_orientations
 
