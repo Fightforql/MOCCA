@@ -139,11 +139,11 @@ def main():
     
     # part1
     #part1_simple(viewer, np.array([0.5, 0.75, 0.5]))
-    #part1_hard(viewer, np.array([0.5, 0.75, 0.5]))
+    part1_hard(viewer, np.array([0.5, 0.75, 0.5]))
     #part1_animation(viewer, np.array([0.5, 0.75, 0.5]))
     
     # part2
-    part2(viewer, 'data/dance.bvh')
+    #part2(viewer, 'data/dance.bvh')
 
 if __name__ == "__main__":
     main()

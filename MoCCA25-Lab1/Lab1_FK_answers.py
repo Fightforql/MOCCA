@@ -1,6 +1,6 @@
 ##############
-# 姓名：
-# 学号：
+# 姓名：梁书怡
+# 学号：2300013147
 ##############
 
 import numpy as np
@@ -76,10 +76,56 @@ def part1_calculate_T_pose(bvh_file_path):
                     joint_parent.append(j)
                     break
     joint_offset=np.array(joint_offset)
-    print(joint_name)
-    print(joint_offset)
-    print(joint_parent)
     return joint_name, joint_parent, joint_offset
+
+def part1_calculate_T_pose1(bvh_file_path):
+    """请填写以下内容
+    输入： bvh 文件路径
+    输出:
+        joint_name: List[str]，字符串列表，包含着所有关节的名字
+        joint_parent: List[int]，整数列表，包含着所有关节的父关节的索引,根节点的父关节索引为-1
+        joint_offset: np.ndarray，形状为(M, 3)的numpy数组，包含着所有关节的偏移量
+
+    Tips:
+        joint_name顺序应该和bvh一致
+    """
+    joint_parent = []
+    joint_offset = []
+    with open(bvh_file_path, 'r') as f:
+        lines = f.readlines()
+    joint_name=[]
+    depth=0
+    st=[]
+    for i in range(len(lines)):
+        line=lines[i]
+        if line.strip().startswith('ROOT') or line.strip().startswith('JOINT'):
+            values = lines[i+2].split()[1:]
+            offset = tuple(float(val) for val in values)
+            st.append((line.split()[-1],depth,offset))
+        
+        if line.strip().startswith('{'):
+            depth+=1
+        if line.strip().startswith('}'):
+            depth-=1
+        if line.strip().startswith('MOTION'):
+            break
+    #由st的节点得到joint_name和joint_parent
+    for i in range(len(st)):
+        node=st[i]
+        curdepth=node[1]
+        name=node[0]
+        offset=node[2]
+        joint_name.append(name)
+        joint_offset.append(offset)
+        if curdepth==0:
+            joint_parent.append(-1)
+        else:
+            for j in range(i-1,-1,-1):
+                if st[j][1]==curdepth-1:
+                    joint_parent.append(j)
+                    break
+    joint_offset=np.array(joint_offset)
+    return joint_name, joint_parent
 
 
 def part2_forward_kinematics(joint_name, joint_parent, joint_offset, motion_data, frame_id):
@@ -146,16 +192,17 @@ def align_joint(joint_nameA,joint_parentA,joint_offsetA,joint_nameT,joint_parent
             offsets.append(joint_offsetA[dic[name]])
     return names,parents,offsets
 
+
+
+
 def part3_retarget_func(T_pose_bvh_path, A_pose_bvh_path):
     """
     将 A-pose的bvh重定向到T-pose上
     输入: 两个bvh文件的路径
     输出: 
         motion_data: np.ndarray，形状为(N,X)的numpy数组，其中N为帧数，X为Channel数。retarget后的运动数据
-    
     Tips:
         两个bvh的joint name顺序可能不一致哦(
-        as_euler时也需要大写的XYZ
     """
     rotation_corrections = {
         "lShoulder": [0, 0, -45],
@@ -168,34 +215,30 @@ def part3_retarget_func(T_pose_bvh_path, A_pose_bvh_path):
     #调整joint name顺序一致
     joint_nameA,joint_parentA,joint_offsetT=align_joint(joint_nameA,joint_parentA,joint_offsetA,joint_nameT,joint_parentT,joint_offsetT)
     motion_dataA=load_motion_data(A_pose_bvh_path)
-    I=np.eye(3)
-    for i in range(motion_dataA.shape[0]): #处理每一帧
-        orientationsB_A=[]
-        index=0
-        for j in range(0,len(joint_nameA)):
-            parent=joint_parentA[j]
-            name=joint_nameA[j]
-            if '_end' in name:
-                orientationsB_A.append(orientationsB_A[parent])
-            else:
-                Xrotation=motion_dataA[i][3*index+3]
-                Yrotation=motion_dataA[i][3*index+4]
-                Zrotation=motion_dataA[i][3*index+5]
-                euler_angle1 = R.from_euler('XYZ', [Xrotation,  Yrotation, Zrotation], degrees=True)
-                if name=='RootJoint':
-                    orientationsB_A.append(I)
-                else:
-                    if joint_nameA[j] in rotation_corrections:
-                        RB_A=R.from_euler('XYZ',rotation_corrections[joint_nameA[j]] , degrees=True).as_matrix()
-                    else:
-                        RB_A=I
-                    matrix=np.dot(orientationsB_A[parent],RB_A)
-                    orientationsB_A.append(matrix)
-                res=np.dot(euler_angle1.as_matrix(),orientationsB_A[j])
-                euler=R.from_matrix(res).as_euler('XYZ',degrees=True)
-                motion_dataA[i][3*index+3]=euler[0]
-                motion_dataA[i][3*index+4]=euler[1]
-                motion_dataA[i][3*index+5]=euler[2]
-                index+=1
-    return motion_dataA
+
     
+    for i in range(motion_dataA.shape[0]):
+        num=0
+        for j in range(len(joint_nameA)):
+            name=joint_nameA[j]
+            index=j-num+1
+            if name == 'RootJoint':
+                continue
+            elif name == 'lShoulder':
+                motion_dataA[i][index * 3: index*3 + 3]  = (R.from_euler('XYZ', list(motion_dataA[i][index * 3: index*3 + 3]), degrees=True) * R.from_euler('XYZ', [0., 0., -45.], degrees=True)).as_euler('XYZ',degrees=True)
+            elif name == 'rShoulder':
+                motion_dataA[i][index * 3: index*3 + 3]  = (R.from_euler('XYZ', list(motion_dataA[i][index * 3: index*3 + 3]), degrees=True) * R.from_euler('XYZ', [0., 0., 45.], degrees=True)).as_euler('XYZ',degrees=True)
+                
+            elif name=='lHip':
+                motion_dataA[i][index * 3: index*3 + 3]  = (R.from_euler('XYZ', list(motion_dataA[i][index * 3: index*3 + 3]), degrees=True) * R.from_euler('XYZ', [0., 0., 45.], degrees=True)).as_euler('XYZ',degrees=True)
+                
+            elif name=='rHip':
+                motion_dataA[i][index * 3: index*3 + 3] = (R.from_euler('XYZ', list(motion_dataA[i][index * 3: index*3 + 3]), degrees=True) * R.from_euler('XYZ', [0., 0., -45.], degrees=True)).as_euler('XYZ',degrees=True)
+                
+            elif '_end' in name:
+                num+=1
+                continue
+
+    return motion_dataA
+
+
