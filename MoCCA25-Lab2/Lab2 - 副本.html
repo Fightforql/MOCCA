@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>PART 1</title>
+            <style>
+/* From extension vscode.github */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.vscode-dark img[src$=\#gh-light-mode-only],
+.vscode-light img[src$=\#gh-dark-mode-only],
+.vscode-high-contrast:not(.vscode-high-contrast-light) img[src$=\#gh-light-mode-only],
+.vscode-high-contrast-light img[src$=\#gh-dark-mode-only] {
+	display: none;
+}
+
+</style>
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css">
+<link href="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.css" rel="stylesheet" type="text/css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        <style>
+.task-list-item {
+    list-style-type: none;
+}
+
+.task-list-item-checkbox {
+    margin-left: -20px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+</style>
+<style>
+:root {
+  --color-note: #0969da;
+  --color-tip: #1a7f37;
+  --color-warning: #9a6700;
+  --color-severe: #bc4c00;
+  --color-caution: #d1242f;
+  --color-important: #8250df;
+}
+
+</style>
+<style>
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-note: #2f81f7;
+    --color-tip: #3fb950;
+    --color-warning: #d29922;
+    --color-severe: #db6d28;
+    --color-caution: #f85149;
+    --color-important: #a371f7;
+  }
+}
+
+</style>
+<style>
+.markdown-alert {
+  padding: 0.5rem 1rem;
+  margin-bottom: 16px;
+  color: inherit;
+  border-left: .25em solid #888;
+}
+
+.markdown-alert>:first-child {
+  margin-top: 0
+}
+
+.markdown-alert>:last-child {
+  margin-bottom: 0
+}
+
+.markdown-alert .markdown-alert-title {
+  display: flex;
+  font-weight: 500;
+  align-items: center;
+  line-height: 1
+}
+
+.markdown-alert .markdown-alert-title .octicon {
+  margin-right: 0.5rem;
+  display: inline-block;
+  overflow: visible !important;
+  vertical-align: text-bottom;
+  fill: currentColor;
+}
+
+.markdown-alert.markdown-alert-note {
+  border-left-color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-note .markdown-alert-title {
+  color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-important {
+  border-left-color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-important .markdown-alert-title {
+  color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-warning {
+  border-left-color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-warning .markdown-alert-title {
+  color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-tip {
+  border-left-color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-tip .markdown-alert-title {
+  color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-caution {
+  border-left-color: var(--color-caution);
+}
+
+.markdown-alert.markdown-alert-caution .markdown-alert-title {
+  color: var(--color-caution);
+}
+
+</style>
+        
+        </head>
+        <body class="vscode-body vscode-light">
+            <h2 id="part-1">PART 1</h2>
+<h3 id="1动作插值">1.动作插值</h3>
+<h4 id="a首先根据提供的公式计算出blend_weight">a.首先根据提供的公式计算出blend_weight</h4>
+<p>由于已经先将动作对齐到(0,0)的Xoz位置，而这两个动作仅仅是向z方向前进，所以最后一帧z方向的坐标即为位移，帧数*每一帧的时间<code>frame_time</code>即为时间，速度=位移/时间，得到速度v1和v2
+利用<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>w</mi><mo>=</mo><mo stretchy="false">(</mo><mi>v</mi><mo>−</mo><mi>v</mi><mn>1</mn><mo stretchy="false">)</mo><mi mathvariant="normal">/</mi><mo stretchy="false">(</mo><mi>v</mi><mn>2</mn><mo>−</mo><mi>v</mi><mn>1</mn><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">w=(v-v1)/(v2-v1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02691em;">w</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mord">1</span><span class="mclose">)</span><span class="mord">/</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mord">2</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mord">1</span><span class="mclose">)</span></span></span></span>计算出blend_weight</p>
+<pre><code class="language-python"> <span class="hljs-comment">#初始z方向位置为0，用最后一帧计算的z位置/(帧数*frametime) 即为速度</span>
+
+    v1 = walk_forward.joint_position[-<span class="hljs-number">1</span>,<span class="hljs-number">0</span>,<span class="hljs-number">2</span>] /(walk_forward.motion_length*walk_forward.frame_time)
+
+    v2 = run_forward.joint_position[-<span class="hljs-number">1</span>,<span class="hljs-number">0</span>,<span class="hljs-number">2</span>] / (run_forward.motion_length*run_forward.frame_time)
+
+    blend_weight = (v-v1)/(v2-v1)
+
+</code></pre>
+<h4 id="b计算帧数">b.计算帧数</h4>
+<p><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo>=</mo><mfrac><mrow><msub><mi>w</mi><mn>1</mn></msub><mo>∗</mo><msub><mi>v</mi><mn>1</mn></msub><mo>∗</mo><msub><mi>n</mi><mn>1</mn></msub><mo>+</mo><msub><mi>w</mi><mn>2</mn></msub><mo>∗</mo><msub><mi>v</mi><mn>2</mn></msub><mo>∗</mo><msub><mi>n</mi><mn>2</mn></msub></mrow><mi>v</mi></mfrac></mrow><annotation encoding="application/x-tex">n=\frac{w_1*v_1*n_1+w_2*v_2*n_2}{v}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.1634em;vertical-align:-0.345em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8184em;"><span style="top:-2.655em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03588em;">v</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.4101em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.02691em;">w</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3173em;"><span style="top:-2.357em;margin-left:-0.0269em;margin-right:0.0714em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.143em;"><span></span></span></span></span></span></span><span class="mbin mtight">∗</span><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3173em;"><span style="top:-2.357em;margin-left:-0.0359em;margin-right:0.0714em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.143em;"><span></span></span></span></span></span></span><span class="mbin mtight">∗</span><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3173em;"><span style="top:-2.357em;margin-left:0em;margin-right:0.0714em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.143em;"><span></span></span></span></span></span></span><span class="mbin mtight">+</span><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.02691em;">w</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3173em;"><span style="top:-2.357em;margin-left:-0.0269em;margin-right:0.0714em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.143em;"><span></span></span></span></span></span></span><span class="mbin mtight">∗</span><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3173em;"><span style="top:-2.357em;margin-left:-0.0359em;margin-right:0.0714em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.143em;"><span></span></span></span></span></span></span><span class="mbin mtight">∗</span><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3173em;"><span style="top:-2.357em;margin-left:0em;margin-right:0.0714em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.143em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.345em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span>
+得到帧数</p>
+<h4 id="c计算插值第i帧的position和rotation">c.计算插值第i帧的position和rotation</h4>
+<div align="center">
+  <img src="file:///d:\Games105\MOCCA\MoCCA25-Lab2\1.png" width="50%">
+</div>
+根据上图，要对时间做插值，首先将插值区间归一化到区间[0,1]上!
+对于第i帧对应的位置t，需要用到动作1的index1帧和动作2的index2帧来进行blend
+index1和index2如下：
+<pre><code class="language-python">t=<span class="hljs-built_in">float</span>(i/<span class="hljs-built_in">len</span>(input_alpha))
+index1=t*(n1-<span class="hljs-number">1</span>)
+index2=t*(n2-<span class="hljs-number">1</span>)
+</code></pre>
+<p>然后，由于index1不一定是整数，所以先对index1向上、向下取整的这两帧做一个blend，来得到index1这一帧的动作；index2同理
+<strong>对于position使用 linear lerp，对于rotation，使用scipy库中的Slerp函数</strong></p>
+<pre><code class="language-python">position1=lerp(bvh_motion1.joint_position[k1][j],bvh_motion1.joint_position[k2][j],index1-k1)
+position2=lerp(bvh_motion2.joint_position[m1][j],bvh_motion2.joint_position[m2][j],index2-m1)
+rot1=R.from_quat([bvh_motion1.joint_rotation[k1][j],bvh_motion1.joint_rotation[k2][j]])
+rot2=R.from_quat([bvh_motion2.joint_rotation[m1][j],bvh_motion2.joint_rotation[m2][j]])
+time=[<span class="hljs-number">0</span>,<span class="hljs-number">1</span>]
+slerp1=Slerp(time,rot1)
+slerp2=Slerp(time,rot2)
+rotation1=slerp1(index1-k1)
+rotation2=slerp2(index2-m1)
+</code></pre>
+<p>再对得到的动作1的index1帧和动作2的index2帧的动作做一次blend
+具体操作与上面类似</p>
+<p><u>在此过程中，不断将i向后推</u></p>
+<h4 id="效果展示以v15为例"><font color="#ff0000">效果展示：</font>以v=1.5为例</h4>
+<div style="text-align: center;">
+  <video style="width: 60%; height: auto;" controls>
+    <source src="1.mp4" type="video/mp4">
+  </video>
+</div>
+<h3 id="2-制作循环动画使用inertialization">2. 制作循环动画(使用inertialization）</h3>
+<h4 id="a根据inertialization的原理首先计算diff">a.根据inertialization的原理，首先计算diff</h4>
+<p>即第一帧与最后一帧的差异，对于position直接相减，而对于rotation，<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>R</mi><mo mathvariant="normal" lspace="0em" rspace="0em">′</mo></msup><mo>=</mo><msup><mi>R</mi><mo>∗</mo></msup><mi>R</mi></mrow><annotation encoding="application/x-tex">R&#x27;=R^*R</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7519em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.00773em;">R</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7519em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6887em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.00773em;">R</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.6887em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mbin mtight">∗</span></span></span></span></span></span></span></span><span class="mord mathnormal" style="margin-right:0.00773em;">R</span></span></span></span>
+需要计算<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mo>∗</mo></mrow><annotation encoding="application/x-tex">R*</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.00773em;">R</span><span class="mord">∗</span></span></span></span></p>
+<pre><code class="language-python"><span class="hljs-comment">#首先计算开始帧与结束帧的差异</span>
+
+    rot_diff = (R.from_quat(rotations[-<span class="hljs-number">1</span>]) * R.from_quat(rotations[<span class="hljs-number">0</span>].copy()).inv()).as_rotvec()
+    avel_diff = (avel[-<span class="hljs-number">1</span>] - avel[<span class="hljs-number">0</span>])
+</code></pre>
+<h4 id="b利用给出的临界阻尼作用position和rotation的函数对diff做衰减">b.利用给出的临界阻尼作用Position和Rotation的函数，对diff做衰减</h4>
+<p>采用在两侧都做衰减的方式</p>
+<div align="center">
+  <img src="file:///d:\Games105\MOCCA\MoCCA25-Lab2\2.png" width="50%">
+</div>
+**对于第i帧的动作，分别计算position的offset和rotation的rot_offset**
+**第i帧不只是受到头部diff1衰减的影响，还受到尾部diff2衰减的影响**
+<p>此外，首先还需要计算角速度和速度，以便应用阻尼弹簧函数来做衰减</p>
+<pre><code class="language-python">avel = quat_to_avel(rotations, <span class="hljs-number">1</span>/<span class="hljs-number">60</span>)
+avel_diff = (avel[-<span class="hljs-number">1</span>] - avel[<span class="hljs-number">0</span>])
+</code></pre>
+<p>计算diff1对应的衰减后的offset1：
+ratio代表头部的贡献比例，1-ratio是尾部的贡献比例</p>
+<p>从而对ratio*diff做衰减得到offset1
+<code>offset1 = decay_spring_implicit_damping_rot(ratio*rot_diff, (1-ratio)*avel_diff, half_life, i/60)</code></p>
+<p><font color="#ff0000">offset2也是同理，只不过是将offset1的ratio替换为1-ratio</font>
+然后总offset=offset1-offset2(以position为例)</p>
+<p><strong>对于rotation的衰减也是同理</strong>，只不过offset<font color="#ff0000">不是直接加减，而是相乘</font>
+最后将这个offset应用到原来的动作上即可</p>
+<h4 id="效果展示"><font color="#ff0000">效果展示</font>：</h4>
+<div style="text-align: center;">
+  <video style="width: 60%; height: auto;" controls>
+    <source src="2.mp4" type="video/mp4">
+  </video>
+</div>
+<h3 id="3动作拼接使用inertialization">3.动作拼接（使用inertialization）</h3>
+<h4 id="1首先找到bvh_motion2中离motion1的mix_frame1最接近的一帧">1.首先找到bvh_motion2中离motion1的mix_frame1最接近的一帧</h4>
+<p>见find_best_match_frame函数，其中position diff的权重为0.6，rotation_diff的权重为0.4
+找到diff最小的那一帧
+<u>事实上，也可以直接尝试不同的mix_frame2，观察哪个效果比较好</u></p>
+<h4 id="2进行bvh_motion2和bvh_motion1的对齐">2.进行bvh_motion2和bvh_motion1的对齐</h4>
+<p>利用<code>translation_and_rotation</code>函数将bvh_motion2的mix_frame2帧的position、xz朝向分别对齐到bvh_motion1的mix_frame1帧</p>
+<h4 id="3计算动作1的mix_frame1帧与动作2的mix_frame2帧之间的差异">3.计算动作1的mix_frame1帧与动作2的mix_frame2帧之间的差异</h4>
+<p>同上文原理一样，计算位置、旋转、速度、角速度的diff</p>
+<pre><code class="language-python">avel1=quat_to_avel(rotations1, <span class="hljs-number">1</span>/<span class="hljs-number">60</span>)
+avel2=quat_to_avel(rotations2,<span class="hljs-number">1</span>/<span class="hljs-number">60</span>)
+rot_diff = (R.from_quat(rotations1[-<span class="hljs-number">1</span>]) * R.from_quat(rotations2[<span class="hljs-number">0</span>].copy()).inv()).as_rotvec()
+avel_diff = (avel1[-<span class="hljs-number">1</span>] - avel2[<span class="hljs-number">0</span>])
+pos_diff = res1.joint_position[-<span class="hljs-number">1</span>] - res2.joint_position[<span class="hljs-number">0</span>]
+vel1 = res1.joint_position[-<span class="hljs-number">1</span>] - res1.joint_position[-<span class="hljs-number">2</span>]
+vel2 = res2.joint_position[<span class="hljs-number">1</span>] -res2.joint_position[<span class="hljs-number">0</span>]
+vel_diff = (vel1 - vel2)/<span class="hljs-number">60</span>
+</code></pre>
+<h4 id="4将diff衰减后加到动作2上">4.将diff衰减后加到动作2上</h4>
+<p>利用阻尼弹簧函数得到衰减后的diff，将衰减后的diff加到motion2上</p>
+<h4 id="效果展示-1"><font color="#ff0000">效果展示：</font></h4>
+<p>如果希望从走到跑这一加速过程比较快，<code>half_life</code>要设置的比较小
+像下面这样(<strong>half_life=0.27</strong>)</p>
+<div style="text-align: center;">
+  <video style="width: 60%; height: auto;" controls>
+    <source src="3.mp4" type="video/mp4">
+  </video>
+</div>
+<p>如果希望从走到跑是一个慢慢变化的过程，则将half_life适当调大</p>
+<p>==另外发现直接选取<code>mix_frame2=20</code>可以得到不错的效果（虽然有脚滑），如下：==</p>
+<div style="text-align: center;">
+  <video style="width: 60%; height: auto;" controls>
+    <source src="4.mp4" type="video/mp4">
+  </video>
+</div>
+<h2 id="part-2">PART 2</h2>
+<h3 id="参考httpsgithubcomorangeduckmotion-matching">参考<a href="https://github.com/orangeduck/Motion-Matching">https://github.com/orangeduck/Motion-Matching</a></h3>
+<p>用根节点近似作为<code>Simulation Bone</code></p>
+<h3 id="1构建database">1.构建database</h3>
+<p><strong>对于所有bvh的每一帧构建一个27维特征向量，这27维分别是：</strong>
+0-6：未来第20，40，60帧相对于第0帧根节点在局部坐标系中的位移(只需要x、z方向)
+6-12：未来第20，40，60帧相对于第0帧根节点在局部坐标系中的朝向(只需要x、z方向)
+12-18：左脚、右脚在局部坐标系中的位置
+18-27：根结点、左脚、右脚在局部坐标系中的速度
+用一下三个函数实现：</p>
+<blockquote>
+<p>compute_trajectory_position_feature
+compute_trajectory_direction_feature
+compute_other_feature</p>
+</blockquote>
+<p>读取五个bvh文件的motion data,对于每一帧构建出相应的feature_vector
+data是一个五元素的list，list[i]表示第i个bvh的所有feature_vectors
+<font color="#ff0000">此外，应对特征向量进行归一化</font>
+<font color="#ff0000">对每一维，求均值和方差，进行归一化处理</font></p>
+<h3 id="2对于cur_frame得到cur_frame对应的特征向量-即query">2.对于cur_frame，得到cur_frame对应的特征向量 即query</h3>
+<p>0-6,6-12用以下代码实现：</p>
+<pre><code class="language-python">query[<span class="hljs-number">0</span>:<span class="hljs-number">2</span>]=R.from_quat(self.cur_root_rot).inv().apply(desired_pos_list[<span class="hljs-number">1</span>]-self.cur_root_pos)[[<span class="hljs-number">0</span>,<span class="hljs-number">2</span>]]
+
+query[<span class="hljs-number">2</span>:<span class="hljs-number">4</span>]=R.from_quat(self.cur_root_rot).inv().apply(desired_pos_list[<span class="hljs-number">2</span>]-self.cur_root_pos)[[<span class="hljs-number">0</span>,<span class="hljs-number">2</span>]]
+
+query[<span class="hljs-number">4</span>:<span class="hljs-number">6</span>]=R.from_quat(self.cur_root_rot).inv().apply(desired_pos_list[<span class="hljs-number">3</span>]-self.cur_root_pos)[[<span class="hljs-number">0</span>,<span class="hljs-number">2</span>]]
+
+        query[<span class="hljs-number">6</span>:<span class="hljs-number">8</span>]=R.from_quat(self.cur_root_rot).inv().apply(R.from_quat(desired_rot_list[<span class="hljs-number">1</span>]).apply(np.array([<span class="hljs-number">0.</span>,<span class="hljs-number">0.</span>,<span class="hljs-number">1.</span>])))[[<span class="hljs-number">0</span>,<span class="hljs-number">2</span>]]
+
+        query[<span class="hljs-number">8</span>:<span class="hljs-number">10</span>]=R.from_quat(self.cur_root_rot).inv().apply(R.from_quat(desired_rot_list[<span class="hljs-number">2</span>]).apply(np.array([<span class="hljs-number">0.</span>,<span class="hljs-number">0.</span>,<span class="hljs-number">1.</span>])))[[<span class="hljs-number">0</span>,<span class="hljs-number">2</span>]]
+
+        query[<span class="hljs-number">10</span>:<span class="hljs-number">12</span>]=R.from_quat(self.cur_root_rot).inv().apply(R.from_quat(desired_rot_list[<span class="hljs-number">3</span>]).apply(np.array([<span class="hljs-number">0.</span>,<span class="hljs-number">0.</span>,<span class="hljs-number">1.</span>])))[[<span class="hljs-number">0</span>,<span class="hljs-number">2</span>]]
+</code></pre>
+<p><strong>12-27直接复制database中相应帧的向量即可</strong></p>
+<h3 id="3在database中搜索离query最近的一帧next_frame">3.在database中搜索离query最近的一帧next_frame</h3>
+<p>利用scipy库中的<strong>KDTree</strong>函数，搜索比较快速
+同时需要注意的是，在搜索之前为每一维<strong>设置了合适的权重</strong>，使得计算距离不是简单的欧几里得距离
+权重设置如下：</p>
+<div align="center">
+  <img src="file:///d:\Games105\MOCCA\MoCCA25-Lab2\3.png" width="50%">
+</div>
+<p>同时需要注意的是，应该得到最近的一帧所在的bvh和这一帧在相应的bvh中的index
+因此，分别建立五个KDTree</p>
+<div align="center">
+  <img src="file:///d:\Games105\MOCCA\MoCCA25-Lab2\4.png" width="50%">
+</div>
+<p>尝试改进的方法是：在手柄方向不变的情况下，优先从第0个tree(也就是walk.bvh对应的tree中查找)</p>
+<h3 id="4找到之后进行切换">4.找到之后进行切换</h3>
+<p>这里我做了两个变化：</p>
+<h3 id="a找到next-frame之后若要切换node不是立即切换node">a.找到next-frame之后，若要切换node,不是立即切换node</h3>
+<p>这是为了避免来回在两个node摆动
+当有三次发现要切换node之后才真正切换</p>
+<p>如下，利用self.counter实现</p>
+<div align="center">
+  <img src="file:///d:\Games105\MOCCA\MoCCA25-Lab2\5.png" width="50%">
+</div>
+<h3 id="b将walkbvh设置为循环动作">b.将walk.bvh设置为循环动作</h3>
+<p>利用task1中的bulid_loop_motion即可</p>
+<h2 id="效果展示-2"><font color="#ff0000">效果展示：</font></h2>
+<h4 id="1180度-spin">1.180度 spin</h4>
+<div style="text-align: center;">
+  <video style="width: 60%; height: auto;" controls>
+    <source src="5.mp4" type="video/mp4">
+  </video>
+</div>
+<h4 id="2turn-left-and-turn-right">2.turn left and turn right</h4>
+<div style="text-align: center;">
+  <video style="width: 60%; height: auto;" controls>
+    <source src="6.mp4" type="video/mp4">
+  </video>
+</div>
+<div style="text-align: center;">
+  <video style="width: 60%; height: auto;" controls>
+    <source src="7.mp4" type="video/mp4">
+  </video>
+</div>
+
+            <script async src="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.js"></script>
+            
+        </body>
+        </html>
