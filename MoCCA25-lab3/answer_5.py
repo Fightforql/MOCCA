@@ -1,3 +1,5 @@
+# 姓名：梁书怡
+# 学号：2300013147
 import numpy as np
 from scipy.spatial.transform import Rotation
 

@@ -1,4 +1,5 @@
-
+# 姓名：梁书怡
+# 学号：2300013147
 import scipy.linalg
 import utils
 from joints import Joint
@@ -106,6 +107,11 @@ def ball_Jacobian(x:np.ndarray, R:np.ndarray, v:np.ndarray, w:np.ndarray, joints
         J[i, :, 3:6] = -cross_matrix(R[bodyA] @ joints[i].from_bodyA)  # [rA]× for bodyA w
         J[i, :, 6:9] = -np.eye(3)    # I for bodyB v
         J[i, :, 9:12] = cross_matrix(R[bodyB] @ joints[i].from_bodyB)  # -[rB]× for bodyB w
+        v_jnt_A = v[bodyA] + np.cross(w[bodyA], R[bodyA] @ jnt.from_bodyA)
+        v_jnt_B = v[bodyB] + np.cross(w[bodyB], R[bodyB] @ jnt.from_bodyB)
+        alpha = 0.25
+        delta_v=v_jnt_B  - v_jnt_A
+        #rhs[i] = alpha * delta_v
         #J[i]=np.hstack([I_3,-cross_matrix(RR.from_matrix(R_bodyA[i]).apply(from_bodyA[i])),-I_3,cross_matrix(RR.from_matrix(R_bodyB[i]).apply(from_bodyB[i]))])
         
     return J, rhs
@@ -157,7 +163,7 @@ def forward_dynamics_with_constraints(
     
     hinge_joints = [jnt for jnt in joints if jnt.hinge_axis is not None]
     num_hinge_joints = len(hinge_joints)
-    
+    #num_joints=num_joints-num_hinge_joints
     v_next, w_next = v.copy(), w.copy()
     
     
@@ -241,6 +247,7 @@ def forward_dynamics_with_constraints(
     #------------------------------------------------------------------
     # [3]. 构造所有约束的 Jacobian 矩阵 J 和右端项 rhs
     #------------------------------------------------------------------
+    
     constraint_dim = num_joints * 3
     constraint_dim += num_hinge_joints * 2 # hinge 关节的额外约束
     
@@ -251,6 +258,7 @@ def forward_dynamics_with_constraints(
     J_ball, rhs_ball = ball_Jacobian(x, R, v, w, joints)
     if num_hinge_joints > 0:
         J_hinge, rhs_hinge = hinge_Jacobian(x, R, v, w, hinge_joints)
+        rhs_hinge_flat = rhs_hinge.reshape(-1, 1)
    
     # 将 J_ball, rhs_ball, J_hinge, rhs_hinge 填充到 J 和 rhs 中
     # 注意 J_ball, J_hinge 的大小都是 (nj, dof, 12), 如果你的实现正确，每个约束矩阵的最后一维的前 6 列应该对应 bodyA，后 6 列应该对应 bodyB
@@ -258,17 +266,34 @@ def forward_dynamics_with_constraints(
     # 注意 rhs_ball, rhs_hinge 的大小都是 (nj, dof)，你可能需要 reshape 调整它们的形状    
     
     ##### 你的代码 #####
+    offset=0
+    for i in range(num_joints):
+        #print(i)
+        body1=joints[i].bodyA
+        body2=joints[i].bodyB
+        
+        if body1==-1:
+            body1=num_bodies-1
+        if body2 == -1:
+            body2=num_bodies-1
+        
+        #print(J[3*i:3*i+3,body1*6:body1*6+6].shape)
+        J[3*i:3*i+3,body1*6:body1*6+6]=J_ball[i][:,0:6]
+        J[3*i:3*i+3,body2*6:body2*6+6]=J_ball[i][:,6:12]
+        #offset=3*i+3
+    
     for i in range(num_joints,num_joints+num_hinge_joints):
-        body1=hinge_joints[i].bodyA
-        body2=hinge_joints[i].bodyB
+        body1=hinge_joints[i-num_joints].bodyA
+        body2=hinge_joints[i-num_joints].bodyB
         
         if body1==-1:
             body1=num_bodies-1
         if body2 == -1:
             body2=num_bodies - 1
+        row = 3*num_joints + 2*(i-num_joints)
         
-        J[2*i:2*i+2,body1*6:body1*6+6]=J_hinge[i-num_joints][:,0:6]
-        J[2*i:2*i+2,body2*6:body2*6+6]=J_hinge[i-num_joints][:,6:12]
+        J[row:row+2,body1*6:body1*6+6]=J_hinge[i-num_joints][:,0:6]
+        J[row:row+2,body2*6:body2*6+6]=J_hinge[i-num_joints][:,6:12]
     
 
     for i in range(num_joints):
@@ -288,8 +313,9 @@ def forward_dynamics_with_constraints(
     
     #print(num_hinge_joints)
     rhs_ball_flat = rhs_ball.reshape(-1, 1)
+    
     if num_hinge_joints!=0:
-        rhs = np.vstack([rhs_ball.reshape(-1, 1), rhs_hinge.reshape(-1, 1)])
+        rhs =np.concatenate([rhs_ball_flat, rhs_hinge_flat], axis=0)
     else:
         rhs=rhs_ball_flat
     
@@ -305,6 +331,7 @@ def forward_dynamics_with_constraints(
     ##### 你的代码 #####
     #print(vw.shape)
     A=h*(J@inv_M@np.transpose(J)) #A是9*9矩阵 J是9*24矩阵 vw是24*1
+    
     b = rhs - J@vw
     ###################
     

@@ -1,12 +1,18 @@
-
+# 姓名：梁书怡
+# 学号：2300013147
 import utils
 from joints import Joint
 
 import numpy as np
 
 from typing import List, Tuple
-
-
+ 
+def cross_matrix(x):
+    res=np.array([[0.,-x[2],x[1]],
+                 [x[2],0.,-x[0]],
+                 [-x[1],x[0],0.]
+                 ])
+    return res
 
 def hinge_Jacobian(x:np.ndarray, R:np.ndarray, v:np.ndarray, w:np.ndarray, joints:List[Joint]) -> Tuple[np.ndarray, np.ndarray]:
     ''' 计算 hinge 关节约束的 Jacobian 矩阵
@@ -52,9 +58,30 @@ def hinge_Jacobian(x:np.ndarray, R:np.ndarray, v:np.ndarray, w:np.ndarray, joint
         
     J = np.zeros((num_joints, 2, 12))
     rhs = np.zeros((num_joints, 2))
-    
+   
     ####### 你的回答 #######
-    
-    #######################
+    axes=np.eye(3)
+    # ... existing code ...
+    for i in range(num_joints):
+        jnt = joints[i]
+        # 1. 变换hinge_axis到世界系
+        a_world = R[jnt.bodyA] @ jnt.hinge_axis
+
+        if abs(a_world[0]) < 0.9:
+            tmp = np.array([1,0,0])
+        else:
+            tmp = np.array([0,1,0])
+        n1 = np.cross(a_world, tmp)
+        n1 /= np.linalg.norm(n1)
+        n2 = np.cross(a_world, n1)
+        n2 /= np.linalg.norm(n2)
+
+        J[i, 0, 3:6] = -n1
+        J[i, 0, 9:12] = n1
+        J[i, 1, 3:6] = -n2
+        J[i, 1, 9:12] = n2
+
+
+
     
     return J, rhs
